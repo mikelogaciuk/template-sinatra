@@ -1,0 +1,5 @@
+api:
+  name: app
+  port: 6666
+  key: <%= ENV['API_MASTER_KEY'] %>
+  user: <%= ENV['API_MASTER_USER'] %>

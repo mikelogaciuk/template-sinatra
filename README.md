@@ -1,1 +1,1 @@
-# template-sinatra
+# sinatra-template
