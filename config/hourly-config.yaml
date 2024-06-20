@@ -1,0 +1,12 @@
+api:
+  name: api
+  port: 5000
+  user: <%= ENV['API_MASTER_USER'] %>
+  key: <%= ENV['API_MASTER_KEY'] %>
+
+domain:
+  user: <%= ENV['DOMAIN_USR'] %>
+  password: <%= ENV['DOMAIN_PWD'] %>
+
+target:
+  port: <%= ENV['API_TARGET_PORT'] %>

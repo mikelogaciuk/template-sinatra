@@ -2,34 +2,73 @@
 
 require_relative '../database/config'
 require_relative '../config/config'
+require_relative '../utils/utils'
 require 'bcrypt'
 require 'logger'
 
+# This module represents the database service for managing users in the system.
+#
+# The `Users` module includes the `Logger` class and provides methods for
+# seeding the database, finding a user by email, authenticating a user, checking
+# if a user is an admin, creating a user, deleting a user, listing users,
+# activating a user, and deactivating a user.
+#
 module Database
-  class Users
+  # This class represents a user in the system.
+  class User
+    include Utils
     @logger = Logger.new($stdout)
 
     def self.seed
-      begin
-        DATABASE[:users].insert(id: 1,
-                                email: MASTER_USER,
-                                password: BCrypt::Password.create(MASTER_KEY),
-                                role: 'admin',
-                                is_active: 'true')
-      rescue Sequel::DatabaseError
-       @logger.info('Database already seeded with default admin user.')
-      end
+      DATABASE[:users].insert(email: MASTER_USER,
+                              token: BCrypt::Password.create(MASTER_KEY),
+                              role: 'admin',
+                              is_active: 'true')
+    rescue Sequel::UniqueConstraintViolation
+      @logger.info('Master user already exists.')
+    rescue Sequel::DatabaseError => e
+      @logger.error("Error seeding database: #{e.message}")
     end
 
     def self.find_by_email(email)
-      DATABASE[:users].where(email:).first
+      DATABASE[:users].where(email: email).first
     end
 
-    def self.authenticate(email, password)
-      user = find_by_email(email)
-      return false if user.nil? || user[:password].nil? || user[:is_active] == 'false'
+    def self.create(email, role = 'user')
+      token = Utils.generate_key
+      DATABASE[:users].insert(email: email, token: BCrypt::Password.create(token), role: role, is_active: 'false')
+      token
+    rescue Sequel::UniqueConstraintViolation
+      @logger.info("User with email: #{email} already exists.")
+      false
+    end
 
-      BCrypt::Password.new(user[:password]) == password
+    def self.reset_password(email)
+      token = Utils.generate_key
+      if exists?(email)
+        DATABASE[:users].where(email: email).update(token: BCrypt::Password.create(token))
+        token
+      else
+        @logger.info("Can't reset password. User: #{email} does not exists.")
+        false
+      end
+    end
+
+    def self.delete(email)
+      if exists?(email)
+        DATABASE[:users].where(email: email).delete
+        true
+      else
+        @logger.info("User with email: #{email} does not exist.")
+        false
+      end
+    end
+
+    def self.authenticate(email, token)
+      user = find_by_email(email)
+      return false if user.nil? || user[:token].nil? || user[:is_active] == 'false'
+
+      BCrypt::Password.new(user[:token]) == token
     end
 
     def self.admin?(email)
@@ -42,33 +81,47 @@ module Database
       user[:role] == 'user'
     end
 
-    def self.user_create(email, password)
-      @logger.info("Creating user: #{email}")
-
-      DATABASE[:users].insert(email: email,
-                              password: BCrypt::Password.create(password),
-                              role: 'user')
+    def self.exists?(email)
+      if find_by_email(email).nil?
+        false
+      else
+        true
+      end
     end
 
-    def self.user_delete!(email)
-      DATABASE[:users].where(email: email).delete
+    def self.active?(email)
+      user = find_by_email(email)
+      user[:is_active] == 'true'
+
+      true
     end
 
-    def self.user_exists?(email)
-      !DATABASE[:users].where(email: email).first.nil?
+    def self.activate!(email)
+      if exists?(email)
+        DATABASE[:users].where(email: email).update(is_active: 'true')
+        true
+      else
+        @logger.info("User with email: #{email} does not exist.")
+        false
+      end
     end
 
-    def self.users_list
-      DATABASE[:users].select(:email, :role, :is_active).map(&:values)
+    def self.deactivate!(email)
+      if exists?(email)
+        DATABASE[:users].where(email: email).update(is_active: 'false')
+        true
+      else
+        @logger.info("User with email: #{email} does not exist.")
+        false
+      end
     end
 
-    def self.user_activate!(email)
-      DATABASE[:users].where(email: email).update(is_active: 'true')
+    def self.list
+      DATABASE[:users].select(:email, :role, :is_active).all
     end
 
-    def self.user_deactivate!(email)
-      DATABASE[:users].where(email: email).update(is_active: 'false')
+    def self.purge
+      DATABASE[:users].exclude(email: MASTER_USER).delete
     end
-
   end
 end
