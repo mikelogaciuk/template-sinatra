@@ -2,7 +2,13 @@
 
 require 'sinatra/base'
 
-class Errors < Sinatra::Base
+# This class represents the error routes for handling errors in the system.
+#
+# The `Errors` class inherits from `Sinatra::Base`.
+#
+# The error routes allow for handling 401, 400, 403, and 404 errors.
+#
+class Error < Sinatra::Base
   error 401 do
     content_type :json
     status 401

@@ -1,5 +1,6 @@
-# sinatra-template
+# template-sinatra
 
 ## About
 
-Just a basic template for microframeworks used on my home K8S cluster.
+Just a simple template for a Sinatra app.
+

@@ -2,12 +2,24 @@
 
 source 'https://rubygems.org'
 
+group :runner do
+  gem 'foreman'
+end
+
+group :scheduler do
+  gem 'rufus-scheduler'
+  # gem 'sidekiq'
+end
+
 group :cli do
   gem 'dry-cli'
   gem 'rake'
+  gem 'table_print'
+  gem 'tabulo'
 end
 
 group :core do
+  gem 'pony'
   gem 'sinatra'
 end
 
@@ -17,7 +29,7 @@ group :web do
 end
 
 group :db do
-  #gem 'ruby-oci8'
+  # gem 'ruby-oci8'
   gem 'sequel'
   gem 'sqlite3'
   gem 'tiny_tds'

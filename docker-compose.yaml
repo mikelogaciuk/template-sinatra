@@ -1,0 +1,24 @@
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      tags:
+      - "repository:18666/api:latest"
+    container_name: api
+    image: api
+    hostname: api
+    restart: on-failure
+    command: ["bash", "-c", "rake run:scheduler"]
+    environment:
+      - DOMAIN_USR=${DOMAIN_USR}
+      - DOMAIN_PWD=${DOMAIN_PWD}
+    ports:
+    - 5000:5000
+    networks:
+    - api-network
+networks:
+  api-network:
+    driver: bridge
+    name: api-network
